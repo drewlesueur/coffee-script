@@ -17,6 +17,8 @@ THIS    = -> this
 NEGATE  = -> @negated = not @negated; this
 
 __metabeta__ = false
+all_funcs = []
+
 #### Base
 
 # The **Base** is the abstract base class for all nodes in the syntax tree.
@@ -43,6 +45,8 @@ exports.Base = class Base
     node.tab = o.indent
     #return "this is the compiled code"
     #return "__metabeta__ is #{__metabeta__}"
+    all_funcs = []
+    meta_beta = false
     if o.level is LEVEL_TOP or node.isPureStatement() or not node.isStatement(o)
       node.compileNode o
     else
@@ -231,7 +235,10 @@ exports.Expressions = class Expressions extends Base
     o.level  = LEVEL_TOP
     code     = @compileWithDeclarations o
     code     = code.replace TRAILING_WHITESPACE, '' # this is for all the vars at the top yo
-    if o.bare then code else "(function() {\n#{code}\n}).call(this);\n"
+    if __metabeta__  
+      if o.bare then code else "(function() {\nvar __funcs = [#{all_funcs.join('\n,\n')}]\n#{code}\n}).call(this);\n"
+    else
+      if o.bare then code else "(function() {\n#{code}\n}).call(this);\n"
 
   # Compile the expressions body for the contents of a function, with
   # declarations of all inner variables pushed up to the top.
@@ -389,6 +396,7 @@ exports.Value = class Value extends Base
     code  = "(#{code})" if props[0] instanceof Access and @isSimpleNumber()
     code += prop.compile o for prop in props
     if __metabeta__
+      
       "get(\"#{code}\")"
     else
       code
@@ -561,7 +569,10 @@ exports.Access = class Access extends Base
 
   compile: (o) ->
     name = @name.compile o
-    @proto + if IS_STRING.test name then "[#{name}]" else ".#{name}"
+    if __metabeta__
+      @proto + if IS_STRING.test name then ".__meta.get(\"#{name}\")" else ".__meta.get(get(\"#{name}\")"
+    else
+      @proto + if IS_STRING.test name then "[#{name}]" else ".#{name}"
 
   isComplex: NO
 
@@ -1025,6 +1036,11 @@ exports.Code = class Code extends Base
     code  += '(' + vars.join(', ') + ') {'
     code  += "\n#{ @body.compileWithDeclarations o }\n#{@tab}" unless @body.isEmpty()
     code  += '}'
+    
+    if __metabeta__
+      all_funcs.push code
+      code = "make_func(all_funcs[#{all_funcs.length-1}], scope)" ##initial explicit scope
+    
     return @tab + code if @ctor
     return utility('bind') + "(#{code}, #{@context})" if @bound
     if @front then "(#{code})" else code
