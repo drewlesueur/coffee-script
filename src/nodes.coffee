@@ -16,6 +16,7 @@ NO      = -> no
 THIS    = -> this
 NEGATE  = -> @negated = not @negated; this
 
+__metabeta__ = false
 #### Base
 
 # The **Base** is the abstract base class for all nodes in the syntax tree.
@@ -40,6 +41,8 @@ exports.Base = class Base
     o.level  = lvl if lvl
     node     = @unfoldSoak(o) or this
     node.tab = o.indent
+    #return "this is the compiled code"
+    #return "__metabeta__ is #{__metabeta__}"
     if o.level is LEVEL_TOP or node.isPureStatement() or not node.isStatement(o)
       node.compileNode o
     else
@@ -860,7 +863,15 @@ exports.Assign = class Assign extends Base
       throw SyntaxError "\"#{ @variable.compile o }\" cannot be assigned."
     o.scope.find name unless @context or
       isValue and (@variable.namespaced or @variable.hasProperties())
-    val = name + " #{ @context or '=' } " + val
+    if name == "__metabeta__"
+      if val == "true"
+        __metabeta__ = true
+      else if val == "false"
+        __metabeta__ = false
+    if __metabeta__
+      val = "set(" + name + " #{ @context or ', ' } " + val + ")"
+    else  
+      val = name + " #{ @context or '=' } " + val
     if o.level <= LEVEL_LIST then val else "(#{val})"
 
   # Brief implementation of recursive pattern matching, when assigning array or
