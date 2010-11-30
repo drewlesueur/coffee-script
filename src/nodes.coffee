@@ -865,10 +865,10 @@ exports.Assign = class Assign extends Base
       isValue and (@variable.namespaced or @variable.hasProperties())
     if name == "__metabeta__"
       if val == "true"
-        __metabeta__ = true
+        __metabeta__ = !false
       else if val == "false"
         __metabeta__ = false
-    if __metabeta__
+    if __metabeta__ is true
       val = "set(" + name + " #{ @context or ', ' } " + val + ")"
     else  
       val = name + " #{ @context or '=' } " + val
