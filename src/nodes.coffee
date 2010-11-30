@@ -230,7 +230,7 @@ exports.Expressions = class Expressions extends Base
     o.scope  = new Scope null, this, null
     o.level  = LEVEL_TOP
     code     = @compileWithDeclarations o
-    code     = code.replace TRAILING_WHITESPACE, ''
+    code     = code.replace TRAILING_WHITESPACE, '' # this is for all the vars at the top yo
     if o.bare then code else "(function() {\n#{code}\n}).call(this);\n"
 
   # Compile the expressions body for the contents of a function, with
@@ -388,7 +388,10 @@ exports.Value = class Value extends Base
     code  = @base.compile o, if props.length then LEVEL_ACCESS else null
     code  = "(#{code})" if props[0] instanceof Access and @isSimpleNumber()
     code += prop.compile o for prop in props
-    code
+    if __metabeta__
+      "get(\"#{code}\")"
+    else
+      code
 
   # Unfold a soak into an `If`: `a?.b` -> `a.b if a?`
   unfoldSoak: (o) ->
@@ -492,7 +495,10 @@ exports.Call = class Call extends Base
     if @isSuper
       @superReference(o) + ".call(this#{ args and ', ' + args })"
     else
-      (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
+      if __metabeta__
+        'call(' + @variable.compile(o, LEVEL_ACCESS)  + ", [#{args}]" + ")"
+      else
+        (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
 
   # `super()` is converted into a call against the superclass's implementation
   # of the current function.
