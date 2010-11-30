@@ -4,5 +4,24 @@
 <script src="coffee-script.js"></script>
 </head>
 <body>
+<script>
+lexer = new CoffeeScript.require['./lexer'].Lexer
+parser = CoffeeScript.require['./parser'].parser
+parser2 = CoffeeScript.require['./parser'].parse
+function smash(code) {
+  return parser.parse(lexer.tokenize(code))
+  
+}
+
+function smash2(code) {
+  return parser2(lexer.tokenize(code))
+}
+
+//seems like smash and smash 2 are the same
+
+console.log(JSON.stringify(smash("a = 2")))
+
+
+</script>
 </body>
 </html>

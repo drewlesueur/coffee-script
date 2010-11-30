@@ -18,6 +18,7 @@ NEGATE  = -> @negated = not @negated; this
 
 __metabeta__ = false
 all_funcs = []
+last_var = ""
 
 #### Base
 
@@ -396,8 +397,10 @@ exports.Value = class Value extends Base
     code  = "(#{code})" if props[0] instanceof Access and @isSimpleNumber()
     code += prop.compile o for prop in props
     if __metabeta__
-      
-      "get(\"#{code}\")"
+      if @isComplex()
+        code
+      else
+        "get(\"#{code}\")"
     else
       code
 
@@ -570,7 +573,7 @@ exports.Access = class Access extends Base
   compile: (o) ->
     name = @name.compile o
     if __metabeta__
-      @proto + if IS_STRING.test name then ".__meta.get(\"#{name}\")" else ".__meta.get(get(\"#{name}\")"
+      @proto + if IS_STRING.test name then ".__meta.get(get( \"#{name}\"))" else ".__meta.get(\"#{name}\")"
     else
       @proto + if IS_STRING.test name then "[#{name}]" else ".#{name}"
 
@@ -585,7 +588,10 @@ exports.Index = class Index extends Base
   children: ['index']
 
   compile: (o) ->
-    (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
+    if __metabeta__
+      (if @proto then '.prototype' else '') + ".__meta.get( #{ @index.compile o, LEVEL_PAREN })"
+    else
+      (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
 
   isComplex: ->
     @index.isComplex()
