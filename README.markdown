@@ -9,6 +9,6 @@ then do `cake build && cake build:browser`
 
 open `coffee-script/extras/index.html` in a browser
 
-type`CoffeeScript.compile("__metabeta__ = 1; testvar = fun something")`
+type `CoffeeScript.compile("__metabeta__ = true; testvar = fun something")`
 
 See what it renders.
