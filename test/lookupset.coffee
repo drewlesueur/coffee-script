@@ -11,3 +11,4 @@ band =
       undefined
 
 ok band.name is "Aterciopelados"
+ok band.Andrea is "Yea!"

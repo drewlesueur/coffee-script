@@ -1,3 +1,5 @@
+bin/cake build && bin/coffee -c drew2.coffee && cat drew2.js
+
 =
             {
          }   }   {

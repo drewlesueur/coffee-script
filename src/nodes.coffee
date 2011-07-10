@@ -41,9 +41,9 @@ exports.Base = class Base
     node     = @unfoldSoak(o) or this
     node.tab = o.indent
     if o.level is LEVEL_TOP or not node.isStatement(o)
-      node.compileNode o, args...
+      node.compileNode o, lvl, args...
     else
-      node.compileClosure o, args...
+      node.compileClosure o, lvl, args...
 
   # Statements converted into expressions via closure-wrapping share a scope
   # object with their parent closure, to preserve the expected lexical scope.
@@ -398,18 +398,15 @@ exports.Value = class Value extends Base
   # Things get much more interesting if the chain of properties has *soak*
   # operators `?.` interspersed. Then we have to take care not to accidentally
   # evaluate anything twice when building the soak chain.
-  compileNode: (o, extra) ->
-    @base.front = @front
+  compileNode: (o, lvl, extra) ->
+    @base.front = @front + "/*#{extra?.assignment}*/"
     props = @properties
     code  = @base.compile o, if props.length then LEVEL_ACCESS else null
     code  = "#{code}." if (@base instanceof Parens or props.length) and SIMPLENUM.test code
-    if useLookup
-      console.log "EXTRA is"
-      console.log extra
     if useLookup and !extra?.assignment
-      code = prop.compile o, code, extra  for prop in props
-    else if useLookup and extra.assignment
-      code += prop.compile o, code, extra for prop in props
+      code = prop.compile o, null, code, extra  for prop in props
+    else if useLookup and extra?.assignment
+      code += prop.compile o, null,  code, extra for prop in props
     else
       code += prop.compile o for prop in props
     code
@@ -606,11 +603,12 @@ exports.Access = class Access extends Base
   children: ['name']
   
   #why not compileNode?
-  compile: (o, baser, extra) ->
+  compile: (o, lvl, baser, extra) ->
     name = @name.compile o
     if useLookup and !extra?.assignment
       utility "lookup"
-      @proto + "__lookup(#{baser}, \"#{name}\")"
+      #@proto + "__lookup(#{baser}, \"#{name}\")"
+      "__lookup(#{baser}#{@proto}, \"#{name}\")"
     else
       @proto + if IDENTIFIER.test name then ".#{name}" else "[#{name}]"
 
@@ -624,9 +622,11 @@ exports.Index = class Index extends Base
 
   children: ['index']
 
-  compile: (o, baser) ->
-    if useLookup
-      (if @proto then '.prototype' else '') + "__lookup(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
+  compile: (o, lvl, baser, extra) ->
+    if useLookup and not(extra?.assignment)
+      if @proto
+        baser = baser + ".prototype"
+      "__lookup(#{baser}, #{ @index.compile o, LEVEL_PAREN }) /*#{extra?.assignment}*/"
     else
       (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
 
@@ -729,7 +729,7 @@ exports.Slice = class Slice extends Base
   # We have to be careful when trying to slice through the end of the array,
   # `9e9` is used because not all implementations respect `undefined` or `1/0`.
   # `9e9` should be safe because `9e9` > `2**32`, the max array length.
-  compileNode: (o) ->
+  compileNode: (o, lvl, baser, extra) ->
     {to, from} = @range
     fromStr    = from and from.compile(o, LEVEL_PAREN) or '0'
     compiled   = to and to.compile o, LEVEL_PAREN
@@ -740,7 +740,10 @@ exports.Slice = class Slice extends Base
         (+compiled + 1).toString()
       else
         "(#{compiled} + 1) || 9e9"
-    ".slice(#{ fromStr }#{ toStr or '' })"
+    if useLookup
+      "#{baser}.slice(#{ fromStr }#{ toStr or '' })"
+    else
+      ".slice(#{ fromStr }#{ toStr or '' })"
 
 #### Obj
 
@@ -947,8 +950,6 @@ exports.Assign = class Assign extends Base
       return @compileSplice       o if @variable.isSplice()
       return @compileConditional  o if @context in ['||=', '&&=', '?=']
     name = @variable.compile o, LEVEL_LIST, {assignment: true}
-    if useLookup
-      console.log @variable.constructor.toString()
     unless @context or @variable.isAssignable()
       throw SyntaxError "\"#{ @variable.compile o }\" cannot be assigned."
     unless @context or isValue and (@variable.namespaced or @variable.hasProperties())
@@ -965,7 +966,6 @@ exports.Assign = class Assign extends Base
       if val == 'true'
         useLookup = true #__useLookup = !false # if you used __useLookup__ here
       else
-        console.log "val is ***#{val}***"
         useLookup = false # you can toggle it in your code?!
     val = name + " #{ @context or '=' } " + val
 
