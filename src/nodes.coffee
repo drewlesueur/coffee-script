@@ -1833,14 +1833,24 @@ UTILITIES =
       var thissedFunction = function () {
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        return obj[property].apply(obj, args);
+        method = obj[property]
+        if (method) {
+          return obj[property].apply(obj, args);
+        } else {
+          console.log("NO HAVE THE PROP");
+          console.log(property)
+          return
+        }
       }
-      if (typeof obj !== "object") {
+      if (typeof obj !== "object" && typeof obj !== "function") {
         if (isString(obj) && property === "length") {
           return obj.length;
         } else if (isRegExp(obj) && property === "source") {
           return obj.source
         } else {
+          console.log("not object!!!!!")
+          console.log(typeof obj)
+          console.log(property)
           return thissedFunction //everyting else is a function
         }
       }
@@ -1857,7 +1867,7 @@ UTILITIES =
         }
       }
       var type = obj._type
-      var hasTypeObj = typeof type === "obj";
+      var hasTypeObj = typeof type === "obj" || typeof type == "function";
       if (hasTypeObj) {
         return __lookup(type, property);
       } else {
