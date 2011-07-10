@@ -1827,6 +1827,9 @@ UTILITIES =
       var isFunction = function(obj) {
         return !!(obj && obj.constructor && obj.call && obj.apply);
       }; 
+      var isRegExp = function(obj) {
+        return !!(obj && obj.test && obj.exec && (obj.ignoreCase || obj.ignoreCase === false)); 
+      }
       var thissedFunction = function () {
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
@@ -1835,6 +1838,8 @@ UTILITIES =
       if (typeof obj !== "object") {
         if (isString(obj) && property === "length") {
           return obj.length;
+        } else if (isRegExp(obj) && property === "source") {
+          return obj.source
         } else {
           return thissedFunction //everyting else is a function
         }
