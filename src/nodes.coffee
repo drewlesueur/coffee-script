@@ -1817,7 +1817,7 @@ UTILITIES =
   '''
 
   lookup: '''
-    function(object, property) {
+    function(obj, property) {
       var isString = function(obj) {
         return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
       };
@@ -1830,30 +1830,30 @@ UTILITIES =
       var thissedFunction = function () {
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        return object[property].apply(object, args);
+        return obj[property].apply(obj, args);
       }
-      if (typeof object !== "object") {
+      if (typeof obj !== "object") {
         if (isString(obj) && property === "length") {
           return obj.length;
         } else {
           return thissedFunction //everyting else is a function
         }
       }
-      if (property in object) {
-        var ret = object[property];  
+      if (property in obj) {
+        var ret = obj[property];  
         if (isFunction(ret)) {
           ret = thissedFunction
         }
         return ret
-      } else if ("_lookup" in object) {
-        var ret = (object._lookup(object, property))
+      } else if ("_lookup" in obj) {
+        var ret = (obj._lookup(obj, property))
         if (!isUndefined(ret)) {
           return ret  
         }
       }
-      var type = object._type
-      var hasTypeObject = typeof type === "object";
-      if (hasTypeObject) {
+      var type = obj._type
+      var hasTypeObj = typeof type === "obj";
+      if (hasTypeObj) {
         return __lookup(type, property);
       } else {
         return;
