@@ -607,6 +607,7 @@ exports.Access = class Access extends Base
     name = @name.compile o
     if useLookup and !extra?.assignment
       utility "lookup"
+      utility "slice"
       #@proto + "__lookup(#{baser}, \"#{name}\")"
       name = if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
       "__lookup(#{baser}#{@proto}, #{name})"
@@ -1823,19 +1824,27 @@ UTILITIES =
       isUndefined = function(obj) {
         return obj === void 0;
       };
+      var isFunction = function(obj) {
+        return !!(obj && obj.constructor && obj.call && obj.apply);
+      }; 
+      var thissedFunction = function () {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        return object[property].apply(object, args);
+      }
       if (typeof object !== "object") {
         if (isString(obj) && property === "length") {
           return obj.length;
         } else {
-          return function () { //everyting else is a function
-            var args;
-            args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-            return object[property].apply(object, args);
-          }
+          return thissedFunction //everyting else is a function
         }
       }
       if (property in object) {
-        return object[property];  
+        var ret = object[property];  
+        if (isFunction(ret)) {
+          ret = thissedFunction
+        }
+        return ret
       } else if ("_lookup" in object) {
         var ret = (object._lookup(object, property))
         if (!isUndefined(ret)) {
