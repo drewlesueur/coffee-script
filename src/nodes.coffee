@@ -608,7 +608,8 @@ exports.Access = class Access extends Base
     if useLookup and !extra?.assignment
       utility "lookup"
       #@proto + "__lookup(#{baser}, \"#{name}\")"
-      "__lookup(#{baser}#{@proto}, \"#{name}\")"
+      name = if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
+      "__lookup(#{baser}#{@proto}, #{name})"
     else
       @proto + if IDENTIFIER.test name then ".#{name}" else "[#{name}]"
 
