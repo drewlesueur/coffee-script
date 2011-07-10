@@ -4,7 +4,7 @@
 # the syntax tree into a string of JavaScript code, call `compile()` on the root.
 
 {Scope} = require './scope'
-
+useLookup = false
 # Import the helpers we plan to use.
 {compact, flatten, extend, merge, del, starts, ends, last} = require './helpers'
 
@@ -35,15 +35,15 @@ exports.Base = class Base
   # the top level of a block (which would be unnecessary), and we haven't
   # already been asked to return the result (because statements know how to
   # return results).
-  compile: (o, lvl) ->
+  compile: (o, lvl, args...) ->
     o        = extend {}, o
     o.level  = lvl if lvl
     node     = @unfoldSoak(o) or this
     node.tab = o.indent
     if o.level is LEVEL_TOP or not node.isStatement(o)
-      node.compileNode o
+      node.compileNode o, args...
     else
-      node.compileClosure o
+      node.compileClosure o, args...
 
   # Statements converted into expressions via closure-wrapping share a scope
   # object with their parent closure, to preserve the expected lexical scope.
@@ -398,13 +398,22 @@ exports.Value = class Value extends Base
   # Things get much more interesting if the chain of properties has *soak*
   # operators `?.` interspersed. Then we have to take care not to accidentally
   # evaluate anything twice when building the soak chain.
-  compileNode: (o) ->
+  compileNode: (o, extra) ->
     @base.front = @front
     props = @properties
     code  = @base.compile o, if props.length then LEVEL_ACCESS else null
     code  = "#{code}." if (@base instanceof Parens or props.length) and SIMPLENUM.test code
-    code += prop.compile o for prop in props
+    if useLookup
+      console.log "EXTRA is"
+      console.log extra
+    if useLookup and !extra?.assignment
+      code = prop.compile o, code, extra  for prop in props
+    else if useLookup and extra.assignment
+      code += prop.compile o, code, extra for prop in props
+    else
+      code += prop.compile o for prop in props
     code
+ 
 
   # Unfold a soak into an `If`: `a?.b` -> `a.b if a?`
   unfoldSoak: (o) ->
@@ -595,10 +604,15 @@ exports.Access = class Access extends Base
     @soak  = tag is 'soak'
 
   children: ['name']
-
-  compile: (o) ->
+  
+  #why not compileNode?
+  compile: (o, baser, extra) ->
     name = @name.compile o
-    @proto + if IDENTIFIER.test name then ".#{name}" else "[#{name}]"
+    if useLookup and !extra?.assignment
+      utility "lookup"
+      @proto + "__lookup(#{baser}, \"#{name}\")"
+    else
+      @proto + if IDENTIFIER.test name then ".#{name}" else "[#{name}]"
 
   isComplex: NO
 
@@ -610,8 +624,11 @@ exports.Index = class Index extends Base
 
   children: ['index']
 
-  compile: (o) ->
-    (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
+  compile: (o, baser) ->
+    if useLookup
+      (if @proto then '.prototype' else '') + "__lookup(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
+    else
+      (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
 
   isComplex: ->
     @index.isComplex()
@@ -929,7 +946,9 @@ exports.Assign = class Assign extends Base
       return @compilePatternMatch o if @variable.isArray() or @variable.isObject()
       return @compileSplice       o if @variable.isSplice()
       return @compileConditional  o if @context in ['||=', '&&=', '?=']
-    name = @variable.compile o, LEVEL_LIST
+    name = @variable.compile o, LEVEL_LIST, {assignment: true}
+    if useLookup
+      console.log @variable.constructor.toString()
     unless @context or @variable.isAssignable()
       throw SyntaxError "\"#{ @variable.compile o }\" cannot be assigned."
     unless @context or isValue and (@variable.namespaced or @variable.hasProperties())
@@ -942,7 +961,14 @@ exports.Assign = class Assign extends Base
       @value.name  = match[2] ? match[3] ? match[4] ? match[5]
     val = @value.compile o, LEVEL_LIST
     return "#{name}: #{val}" if @context is 'object'
+    if name == "__useLookup__"
+      if val == 'true'
+        useLookup = true #__useLookup = !false # if you used __useLookup__ here
+      else
+        console.log "val is ***#{val}***"
+        useLookup = false # you can toggle it in your code?!
     val = name + " #{ @context or '=' } " + val
+
     if o.level <= LEVEL_LIST then val else "(#{val})"
 
   # Brief implementation of recursive pattern matching, when assigning array or
@@ -1785,6 +1811,43 @@ UTILITIES =
         if (this[i] === item) return i;
       }
       return -1;
+    }
+  '''
+
+  lookup: '''
+    function(object, property) {
+      var isString = function(obj) {
+        return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
+      };
+      isUndefined = function(obj) {
+        return obj === void 0;
+      };
+      if (typeof object !== "object") {
+        if (isString(obj) && property === "length") {
+          return obj.length;
+        } else {
+          return function () { //everyting else is a function
+            var args;
+            args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+            return object[property].apply(object, args);
+          }
+        }
+      }
+      if (property in object) {
+        return object[property];  
+      } else if ("_lookup" in object) {
+        var ret = (object._lookup(object, property))
+        if (!isUndefined(ret)) {
+          return ret  
+        }
+      }
+      var type = object._type
+      var hasTypeObject = typeof type === "object";
+      if (hasTypeObject) {
+        return __lookup(type, property);
+      } else {
+        return;
+      }
     }
   '''
 

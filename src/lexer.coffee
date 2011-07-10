@@ -540,6 +540,7 @@ RESERVED = [
   'case', 'default', 'function', 'var', 'void', 'with'
   'const', 'let', 'enum', 'export', 'import', 'native'
   '__hasProp', '__extends', '__slice', '__bind', '__indexOf'
+  '__lookup'
 ]
 
 # The superset of both JavaScript keywords and reserved words, none of which may
