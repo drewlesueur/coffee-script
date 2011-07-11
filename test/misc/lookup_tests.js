@@ -64,7 +64,7 @@ function __lookup(obj, property, debug) {
     //if (__hasProp.call(obj, property)) {
     //  return ret
     //}
-    return ret  //hmmm
+    //return ret  //hmmm
     if (isFunction(ret)) {
       if (debug) {  
       console.log("returning thissed from normal lookup")
@@ -155,7 +155,12 @@ Snake = {
     return "His!"           
   },
   _lookup: function(obj, property) {
+    console.log("WOOOOOOOO")
+    console.log(property)
     if (property.match(/eyes/)) {
+      console.log("HELLLLOOO")
+      console.log(obj)
+      console.log(obj.eyes)
       return obj.eyes
     }
   },
@@ -190,9 +195,6 @@ library = {
   },
   info: "test"
 }
-
-console.log("YYYYEEEEEESSSSS")
-console.log(__lookup(dog, "makeNoise", "debug")())
 
 
 eq(__lookup([1,2,3], "reverse")()[0] , 3, "build in prototype methods")
