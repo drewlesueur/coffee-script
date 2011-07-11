@@ -11,6 +11,15 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
       return obj.__original.apply(thethis, theargs)
     } 
   }
+  if (property == "apply" && "__original" in obj) {
+    return function(){
+      var args;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      thethis = args[0]
+      theargs = args[1]
+      return obj.__original.apply(thethis, theargs)
+    } 
+  }
   var originalFunction = function(){}
   var isString = function(obj) {
     return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
@@ -204,7 +213,7 @@ eq(snakey.__original, Snake.snakey, "original functions should equal")
 testCall = __lookup(snake, "testCall")
 eq(testCall.__original, Animal.testCall, "original functions should equal again")
 
-eq(__lookup(__lookup(snake, "snakey"), "call")(null, {color: "blue"}) , "green", "the _type's function with object param")
+eq(__lookup(__lookup(snake, "snakey"), "call")(null, {color: "blue"}) , "blue", "the _type's function with object param")
 eq(__lookup(__lookup(snake, "snakey"), "call")(null, {color: "blue"}) , "blue", "using call on typed object")
 eq(__lookup(__lookup(snake, "snakey"), "apply")(null, [{color: "blue"}]) , "blue", "using apply on typed object")
 
