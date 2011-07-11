@@ -550,6 +550,7 @@ exports.Call = class Call extends Base
   # `.apply()` call to allow an array of arguments to be passed.
   # If it's a constructor, then things get real tricky. We have to inject an
   # inner constructor in order to be able to pass the varargs.
+  # TODO: fix this for useLookup
   compileSplat: (o, splatArgs) ->
     return "#{ @superReference o }.apply(this, #{splatArgs})" if @isSuper
     if @isNew
@@ -564,13 +565,20 @@ exports.Call = class Call extends Base
     base = new Value @variable
     if (name = base.properties.pop()) and base.isComplex()
       ref = o.scope.freeVariable 'ref'
-      fun = "(#{ref} = #{ base.compile o, LEVEL_LIST })#{ name.compile o }"
+      if useLookup
+        innerCode = "(#{ref} = #{ base.compile o, LEVEL_LIST })"
+        fun = "#{ name.compile o, null, innerCode }"
+      else
+        fun = "(#{ref} = #{ base.compile o, LEVEL_LIST })#{ name.compile o }"
     else
       fun = base.compile o, LEVEL_ACCESS
       fun = "(#{fun})" if SIMPLENUM.test fun
       if name
         ref = fun
-        fun += name.compile o
+        if useLookup
+          fun = name.compile o, null, fun
+        else
+          fun += name.compile o
       else
         ref = 'null'
     "#{fun}.apply(#{ref}, #{splatArgs})"
