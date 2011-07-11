@@ -2,7 +2,7 @@ require("colors")
 
 __slice = Array.prototype.slice
 __hasProp = Object.prototype.hasOwnProperty
-function __lookup(obj, property, debug) {
+function __lookup(obj, property, dontBindObj, childObj, debug) {
 
   var isString = function(obj) {
     return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
@@ -65,7 +65,7 @@ function __lookup(obj, property, debug) {
     //  return ret
     //}
     //return ret  //hmmm
-    if (isFunction(ret)) {
+    if (!dontBindObj && isFunction(ret)) {
       if (debug) {  
       console.log("returning thissed from normal lookup")
       console.log("the object at this poitn is")
@@ -77,7 +77,8 @@ function __lookup(obj, property, debug) {
     }
     return ret
   } else if ("_lookup" in obj) {
-    var ret = (obj._lookup(obj, property))
+    var usedObj = childObj || obj
+    var ret = (obj._lookup(usedObj, property))
     if (!isUndefined(ret)) {
       return ret  
     }
@@ -88,16 +89,17 @@ function __lookup(obj, property, debug) {
   var type = obj._type
   var hasTypeObj = (typeof type === "object") || (typeof type === "function");
   if (hasTypeObj) {
-    ret = __lookup(type, property);
+    ret = __lookup(type, property, true, obj);
     console.log("lookup with type")
     //return ret //hmmm?
-    if (isFunction(ret)) {
+    if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
       return function () {
         console.log(ret.toString())
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         args.unshift(obj)
         console.log("applying")
+        console.log(JSON.stringify(args))
         console.log(JSON.stringify(obj))
         console.log(ret.toString())
         return ret.apply(obj, args)
@@ -151,6 +153,7 @@ Dog = {
 }
 
 Snake = {
+  className: "Snake",
   makeNoise: function(obj) {
     return "His!"           
   },
@@ -202,11 +205,11 @@ eq(__lookup(library, "joiner")("hi", "world") , "hiworld", "_my own value with a
 eq(__lookup(dog, "age") , dog.age, "my own value")
 eq(__lookup(library, "info") , "test", "my own value")
 eq(__lookup(snake, "ageinator") , "1 snake year", "my own _lookup")
-eq(__lookup(snake, "friendly", "debug") , "depends", "the _types value")
+eq(__lookup(snake, "friendly") , "depends", "the _types value")
 eq(__lookup(dog, "friendly" ) , "unknown", "the _types, _types value")
-eq(__lookup(dog, "makeNoise", "debug")() , "Bark!", "the _type's function")
-eq(__lookup(snake, "snakey", "debug")() , "green", "the _type's function with object param")
-eq(__lookup(snake, "the_eyes", "debug") , "like a cat", "the_type's _lookup")
+eq(__lookup(dog, "makeNoise")() , "Bark!", "the _type's function")
+eq(__lookup(snake, "snakey")() , "green", "the _type's function with object param")
+eq(__lookup(snake, "the_eyes") , "like a cat", "the_type's _lookup")
 
 
 
