@@ -1,7 +1,6 @@
 require("colors")
 
 __slice = Array.prototype.slice
-__hasProp = Object.prototype.hasOwnProperty
 function __lookup(obj, property, dontBindObj, childObj, debug) {
 
   var isString = function(obj) {
@@ -17,32 +16,13 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
     return !!(obj && obj.test && obj.exec && (obj.ignoreCase || obj.ignoreCase === false)); 
   }
   var thissedFunction = function () {
-    if (debug) {
-      console.log("debugged this")
-      console.log(JSON.stringify(obj))
-      //console.log(this)
-    }
     var args;
     args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    if (property == "call") {
-      method = obj
-      obj = args[0]
-      args = args.slice(1)
-    } else {
-      method = obj[property]
-    }
-    //console.log("by the way, args[0] is" + args[0])
-    //console.log("by the way, this is" + this)
+    method = obj[property]
     if (method) {
       //todo make this conditional
-      if (debug) {
-        console.log("applying " + JSON.stringify(obj) + "to the method")
-        console.log(args)
-      }
       return method.apply(obj, args);
     } else {
-      console.log("NO HAVE THE PROP");
-      console.log(property)
       return
     }
   }
@@ -52,26 +32,13 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
     } else if (isRegExp(obj) && property === "source") {
       return obj.source
     } else {
-      console.log("not object!!!!!")
-      console.log(typeof obj)
-      console.log(property)
       return thissedFunction //everyting else is a function
     }
   }
   if (property in obj) {
     
     var ret = obj[property];  
-    //if (__hasProp.call(obj, property)) {
-    //  return ret
-    //}
-    //return ret  //hmmm
     if (!dontBindObj && isFunction(ret)) {
-      if (debug) {  
-      console.log("returning thissed from normal lookup")
-      console.log("the object at this poitn is")
-      console.log(JSON.stringify(obj))
-      }
-      
       thissedFunction.original = ret
       ret = thissedFunction
     }
@@ -83,25 +50,15 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
       return ret  
     }
   }
-  if (debug) {
-    console.log("got here!")
-  }
   var type = obj._type
   var hasTypeObj = (typeof type === "object") || (typeof type === "function");
   if (hasTypeObj) {
     ret = __lookup(type, property, true, obj);
-    console.log("lookup with type")
-    //return ret //hmmm?
     if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
       return function () {
-        console.log(ret.toString())
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         args.unshift(obj)
-        console.log("applying")
-        console.log(JSON.stringify(args))
-        console.log(JSON.stringify(obj))
-        console.log(ret.toString())
         return ret.apply(obj, args)
       }
     } else {
@@ -115,7 +72,6 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
 
 
 a = [1,2,3,4]
-//console.log(a.reverse())
 failes = []
 passCount = 0
 failCount = 0
@@ -144,6 +100,9 @@ Animal = {
     return "You are " + obj.age + " years old"        
   },
   friendly: "unknown",
+  testCall: function(obj, a, b, c) {
+    return obj.color + a + b
+  },
   _lookup: function(obj, property) {
     return "no has " + property
   }
@@ -163,12 +122,7 @@ Snake = {
     return "His!"           
   },
   _lookup: function(obj, property) {
-    console.log("WOOOOOOOO")
-    console.log(property)
     if (property.match(/eyes/)) {
-      console.log("HELLLLOOO")
-      console.log(obj)
-      console.log(obj.eyes)
       return obj.eyes
     }
   },
@@ -218,6 +172,16 @@ eq(__lookup(snake, "the_eyes") , "like a cat", "the_type's _lookup")
 eq(__lookup(snake, "sayAge")() , "You are 1 snake year years old", "_type's _type's func")
 eq(__lookup(snake, "say_what") , "no has say_what", "_type's _type's lookup")
 
+
+testFunc  = function(a, b, c) {
+  return this  + a  + b
+}
+
+eq(__lookup(Array.prototype.reverse, "call")([10,9,8])[0] , 8, "using call")
+
+eq(__lookup(testFunc, "call")("dude", "!", "@"), "dude!@", "using call")
+eq(__lookup(testFunc, "apply")("dude", ["!", "@"]), "dude!@", "using call")
+eq(__lookup(__lookup(snake, "testCall"), "call")({color:"blue"}, "!", "@"), "blue!@", "using call2")
 
 
 console.log((passCount + " tests passed").green)
