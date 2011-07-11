@@ -1818,7 +1818,8 @@ UTILITIES =
   '''
 
   lookup: '''
-    function(obj, property) {
+    function __lookup(obj, property, dontBindObj, childObj, debug) {
+
       var isString = function(obj) {
         return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
       };
@@ -1836,10 +1837,9 @@ UTILITIES =
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         method = obj[property]
         if (method) {
-          return obj[property].apply(obj, args);
+          //todo make this conditional
+          return method.apply(obj, args);
         } else {
-          console.log("NO HAVE THE PROP");
-          console.log(property)
           return
         }
       }
@@ -1849,28 +1849,39 @@ UTILITIES =
         } else if (isRegExp(obj) && property === "source") {
           return obj.source
         } else {
-          console.log("not object!!!!!")
-          console.log(typeof obj)
-          console.log(property)
           return thissedFunction //everyting else is a function
         }
       }
       if (property in obj) {
+        
         var ret = obj[property];  
-        if (isFunction(ret)) {
+        if (!dontBindObj && isFunction(ret)) {
+          thissedFunction.original = ret
           ret = thissedFunction
         }
         return ret
       } else if ("_lookup" in obj) {
-        var ret = (obj._lookup(obj, property))
+        var usedObj = childObj || obj
+        var ret = (obj._lookup(usedObj, property))
         if (!isUndefined(ret)) {
           return ret  
         }
       }
       var type = obj._type
-      var hasTypeObj = typeof type === "obj" || typeof type == "function";
+      var hasTypeObj = (typeof type === "object") || (typeof type === "function");
       if (hasTypeObj) {
-        return __lookup(type, property);
+        ret = __lookup(type, property, true, obj);
+        if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
+          return function () {
+            var args;
+            args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+            args.unshift(obj)
+            return ret.apply(obj, args)
+          }
+        } else {
+          return ret;
+        }
+
       } else {
         return;
       }
