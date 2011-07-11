@@ -2,7 +2,16 @@ require("colors")
 
 __slice = Array.prototype.slice
 function __lookup(obj, property, dontBindObj, childObj, debug) {
-
+  if (property == "call" && "__original" in obj) {
+    return function(){
+      var args;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      thethis = args[0]
+      theargs = args.slice(1)
+      return obj.__original.apply(thethis, theargs)
+    } 
+  }
+  var originalFunction = function(){}
   var isString = function(obj) {
     return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
   };
@@ -18,7 +27,14 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
   var thissedFunction = function () {
     var args;
     args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    method = obj[property]
+    //console.log("calling thissed function with property of " + property)
+    if (false) { //(property == "call") {
+      method = obj
+      obj = args[0]
+      args = args.slice(1)
+    } else {
+      method = obj[property]
+    }
     if (method) {
       //todo make this conditional
       return method.apply(obj, args);
@@ -36,10 +52,13 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
     }
   }
   if (property in obj) {
-    
+    if (false) { //(property == "call" && "__original" in obj) {
+      return obj.__original
+    }    
     var ret = obj[property];  
     if (!dontBindObj && isFunction(ret)) {
-      thissedFunction.original = ret
+      originalFunction = ret
+      thissedFunction.__original = ret
       ret = thissedFunction
     }
     return ret
@@ -55,12 +74,14 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
   if (hasTypeObj) {
     ret = __lookup(type, property, true, obj);
     if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
-      return function () {
+      var fn = function () {
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         args.unshift(obj)
         return ret.apply(obj, args)
       }
+      fn.__original = ret
+      return fn
     } else {
       return ret;
     }
@@ -79,7 +100,9 @@ ok = function (val, message) {
   if (!val) {
     failCount++
     failes.push(message)
+    console.log(message.red)
   } else {
+    console.log(message.green)
     passCount++
   }
 }
@@ -130,6 +153,9 @@ Snake = {
   snakey: function(obj) {
     return obj.color
   },
+  snakey2: function(obj, a) {
+    return obj.color + a
+  },
   _type: Animal
 }
 
@@ -168,9 +194,55 @@ eq(__lookup(snake, "friendly") , "depends", "the _types value")
 eq(__lookup(dog, "friendly" ) , "unknown", "the _types, _types value")
 eq(__lookup(dog, "makeNoise")() , "Bark!", "the _type's function")
 eq(__lookup(snake, "snakey")() , "green", "the _type's function with object param")
+eq(__lookup(snake, "snakey2")("2") , "green2", "the _type's function with object param and another param")
 eq(__lookup(snake, "the_eyes") , "like a cat", "the_type's _lookup")
 eq(__lookup(snake, "sayAge")() , "You are 1 snake year years old", "_type's _type's func")
 eq(__lookup(snake, "say_what") , "no has say_what", "_type's _type's lookup")
+
+snakey = __lookup(snake, "snakey")
+eq(snakey.__original, Snake.snakey, "original functions should equal")
+testCall = __lookup(snake, "testCall")
+eq(testCall.__original, Animal.testCall, "original functions should equal again")
+
+eq(__lookup(__lookup(snake, "snakey"), "call")(null, {color: "blue"}) , "green", "the _type's function with object param")
+eq(__lookup(__lookup(snake, "snakey"), "call")(null, {color: "blue"}) , "blue", "using call on typed object")
+eq(__lookup(__lookup(snake, "snakey"), "apply")(null, [{color: "blue"}]) , "blue", "using apply on typed object")
+
+var obj1;
+obj1 = ({
+  one: 1,
+  two: 2
+});
+
+
+hasOwner = __lookup(Object.prototype, "hasOwnProperty")
+eq(__lookup(hasOwner, "call")(obj1, 'one'), true, "has owner");
+
+hasOwner2 = Object.prototype.hasOwnProperty//__lookup(Object.prototype, "hasOwnProperty")
+eq(__lookup(hasOwner2, "call")(obj1, 'one'), true, "has owner2");
+
+eq(__lookup(__lookup(Object.prototype, "hasOwnProperty"), "call")(obj1, 'one'), true, "1");
+eq(__lookup(obj1, "one"), 1, "2");
+ok(__lookup(__lookup(Object.prototype, "hasOwnProperty"), "call")(obj1, 'two'), "3");
+eq(__lookup(obj1, "two"), 2, "4");
+
+
+
+
+var obj2;
+obj2 = ({
+  three: 3,
+  four: 4
+});
+ok(__lookup(__lookup(Object.prototype, "hasOwnProperty"), "call")(obj2, 'three'), "5");
+eq(__lookup(obj2, "three"), 3, "6");
+ok(__lookup(__lookup(Object.prototype, "hasOwnProperty"), "call")(obj2, 'four'), "7");
+eq(__lookup(obj2, "four"), 4, "8");
+
+
+
+
+
 
 
 testFunc  = function(a, b, c) {
