@@ -1,8 +1,9 @@
 require("colors")
 
 __slice = Array.prototype.slice
-function __lookup(obj, property) {
-  debug = "makeNoise" == property
+__hasProp = Object.prototype.hasOwnProperty
+function __lookup(obj, property, debug) {
+
   var isString = function(obj) {
     return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
   };
@@ -35,7 +36,7 @@ function __lookup(obj, property) {
     if (method) {
       //todo make this conditional
       if (debug) {
-        console.log("applying " + JSON.stringify(obj) + "to the methoD")
+        console.log("applying " + JSON.stringify(obj) + "to the method")
         console.log(args)
       }
       return method.apply(obj, args);
@@ -58,8 +59,12 @@ function __lookup(obj, property) {
     }
   }
   if (property in obj) {
+    
     var ret = obj[property];  
-     
+    //if (__hasProp.call(obj, property)) {
+    //  return ret
+    //}
+    return ret  //hmmm
     if (isFunction(ret)) {
       if (debug) {  
       console.log("returning thissed from normal lookup")
@@ -85,12 +90,17 @@ function __lookup(obj, property) {
   if (hasTypeObj) {
     ret = __lookup(type, property);
     console.log("lookup with type")
+    //return ret //hmmm?
     if (isFunction(ret)) {
       return function () {
+        console.log(ret.toString())
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         args.unshift(obj)
-        ret.apply(obj, args)
+        console.log("applying")
+        console.log(JSON.stringify(obj))
+        console.log(ret.toString())
+        return ret.apply(obj, args)
       }
     } else {
       return ret;
@@ -115,6 +125,14 @@ ok = function (val, message) {
     passCount++
   }
 }
+eq = function (val,other, message) {
+  if (val != other) {
+    failCount++
+    failes.push(message + "\n expected: " + other + "\n got: " + val)
+  } else {
+    passCount++
+  }
+}
 
 Animal = {
   makeNoise: function(obj) {
@@ -122,12 +140,14 @@ Animal = {
   },
   sayAge: function(obj) {
     return "You are " + obj.age + "years old"        
-  }
+  },
+  friendly: "unknown"
 }
 Dog = {
   makeNoise: function(obj) {
     return "Bark!"
-  }
+  },
+  _type: Animal
 }
 
 Snake = {
@@ -138,7 +158,12 @@ Snake = {
     if (property.match(/eyes/)) {
       return obj.eyes
     }
-  }
+  },
+  friendly: "depends",
+  snakey: function(obj) {
+    return obj.color
+  },
+  _type: Animal
 }
 
 dog = {
@@ -150,11 +175,13 @@ dog = {
 snake = {
   eyes: "like a cat",
   age : "1 snake year",
+  color: "green",
   _lookup: function(obj, property) {
     if (property.match(/age/)) {
       return obj.age
     }
-  }
+  },
+  _type: Snake
 }
 
 library = {
@@ -164,21 +191,28 @@ library = {
   info: "test"
 }
 
+console.log("YYYYEEEEEESSSSS")
+console.log(__lookup(dog, "makeNoise", "debug")())
 
-ok(__lookup(library, "info") == "test", "simple lookup")
-console.log(__lookup(library, "joiner")("hi", "world"))
-ok(__lookup(library, "joiner")("hi", "world") == "hiworld", "simple function lookup")
-ok(__lookup([1,2,3], "reverse")()[0] == 3, "build in prototype methods")
-ok(__lookup(dog, "age") == dog.age, "another simple lookup")
-ok(__lookup(dog, "makeNoise")() == "Bark!", "using type")
-ok(__lookup(snake, "ageinator") == "1 snake year", "lookup returning value")
-ok(__lookup(snake, "the_eyes") == "like a cat", "lookup returning from type")
+
+eq(__lookup([1,2,3], "reverse")()[0] , 3, "build in prototype methods")
+eq(__lookup(library, "joiner")("hi", "world") , "hiworld", "_my own value with a function")
+eq(__lookup(dog, "age") , dog.age, "my own value")
+eq(__lookup(library, "info") , "test", "my own value")
+eq(__lookup(snake, "ageinator") , "1 snake year", "my own _lookup")
+eq(__lookup(snake, "friendly", "debug") , "depends", "the _types value")
+eq(__lookup(dog, "friendly" ) , "unknown", "the _types, _types value")
+eq(__lookup(dog, "makeNoise", "debug")() , "Bark!", "the _type's function")
+eq(__lookup(snake, "snakey", "debug")() , "green", "the _type's function with object param")
+eq(__lookup(snake, "the_eyes", "debug") , "like a cat", "the_type's _lookup")
 
 
 
 console.log((passCount + " tests passed").green)
 console.log((failCount + " tests failed").red)
-console.log(JSON.stringify(failes).red)
+for (id in failes) {
+  console.log(failes[id].red)
+}
 /*
 f = Array.prototype.reverse
 g = __lookup(f, "call")
