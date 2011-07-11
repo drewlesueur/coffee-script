@@ -1818,7 +1818,7 @@ UTILITIES =
   '''
 
   lookup: '''
-    function __lookup(obj, property, dontBindObj, childObj, debug) {
+    function (obj, property, dontBindObj, childObj, debug) {
       if (property == "call" && "__original" in obj) {
         return function(){
           var args;
@@ -1866,7 +1866,10 @@ UTILITIES =
           return obj.length;
         } else if (isRegExp(obj) && property === "source") {
           return obj.source
+        } else if (obj[property] === void 0) {
+          return
         } else {
+          //thissedFunction.__original == ????
           return thissedFunction //everyting else is a function
         }
       }

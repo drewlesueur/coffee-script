@@ -49,7 +49,10 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
       return obj.length;
     } else if (isRegExp(obj) && property === "source") {
       return obj.source
+    } else if (obj[property] === void 0) {
+      return
     } else {
+      //thissedFunction.__original == ????
       return thissedFunction //everyting else is a function
     }
   }
@@ -183,6 +186,20 @@ library = {
   info: "test"
 }
 
+var a, b, generateGetter, getA, getArgs;
+generateGetter = function(prop) {
+  return function(obj) {
+    return __lookup(obj, prop);
+  };
+};
+a = b = 30
+getA = generateGetter('a');
+result = getA(a, {
+  b: 1
+});
+eq(void 0, result, "should get null");
+
+eq(__lookup(library, "ooglie") , void 0, "not there")
 
 eq(__lookup([1,2,3], "reverse")()[0] , 3, "build in prototype methods")
 eq(__lookup(library, "joiner")("hi", "world") , "hiworld", "_my own value with a function")
