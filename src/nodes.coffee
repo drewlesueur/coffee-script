@@ -399,7 +399,7 @@ exports.Value = class Value extends Base
   # operators `?.` interspersed. Then we have to take care not to accidentally
   # evaluate anything twice when building the soak chain.
   compileNode: (o, lvl, extra) ->
-    @base.front = @front + "/*#{extra?.assignment}*/"
+    @base.front = @front
     props = @properties
     code  = @base.compile o, if props.length then LEVEL_ACCESS else null
     code  = "#{code}." if (@base instanceof Parens or props.length) and SIMPLENUM.test code
@@ -629,7 +629,7 @@ exports.Index = class Index extends Base
     if useLookup and not(extra?.assignment)
       if @proto
         baser = baser + ".prototype"
-      "__lookup(#{baser}, #{ @index.compile o, LEVEL_PAREN }) /*#{extra?.assignment}*/"
+      "__lookup(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
     else
       (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
 
@@ -1819,7 +1819,25 @@ UTILITIES =
 
   lookup: '''
     function __lookup(obj, property, dontBindObj, childObj, debug) {
-
+      if (property == "call" && "__original" in obj) {
+        return function(){
+          var args;
+          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+          thethis = args[0]
+          theargs = args.slice(1)
+          return obj.__original.apply(thethis, theargs)
+        } 
+      }
+      if (property == "apply" && "__original" in obj) {
+        return function(){
+          var args;
+          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+          thethis = args[0]
+          theargs = args[1]
+          return obj.__original.apply(thethis, theargs)
+        } 
+      }
+      var originalFunction = function(){}
       var isString = function(obj) {
         return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
       };
@@ -1853,10 +1871,10 @@ UTILITIES =
         }
       }
       if (property in obj) {
-        
         var ret = obj[property];  
         if (!dontBindObj && isFunction(ret)) {
-          thissedFunction.original = ret
+          originalFunction = ret
+          thissedFunction.__original = ret
           ret = thissedFunction
         }
         return ret
@@ -1872,12 +1890,14 @@ UTILITIES =
       if (hasTypeObj) {
         ret = __lookup(type, property, true, obj);
         if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
-          return function () {
+          var fn = function () {
             var args;
             args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
             args.unshift(obj)
             return ret.apply(obj, args)
           }
+          fn.__original = ret
+          return fn
         } else {
           return ret;
         }

@@ -36,14 +36,7 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
   var thissedFunction = function () {
     var args;
     args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    //console.log("calling thissed function with property of " + property)
-    if (false) { //(property == "call") {
-      method = obj
-      obj = args[0]
-      args = args.slice(1)
-    } else {
-      method = obj[property]
-    }
+    method = obj[property]
     if (method) {
       //todo make this conditional
       return method.apply(obj, args);
@@ -61,9 +54,6 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
     }
   }
   if (property in obj) {
-    if (false) { //(property == "call" && "__original" in obj) {
-      return obj.__original
-    }    
     var ret = obj[property];  
     if (!dontBindObj && isFunction(ret)) {
       originalFunction = ret
