@@ -141,9 +141,14 @@ Animal = {
     return "noise!";
   },
   sayAge: function(obj) {
-    return "You are " + obj.age + "years old"        
+    return "You are " + obj.age + " years old"        
   },
-  friendly: "unknown"
+  friendly: "unknown",
+  _lookup: function(obj, property) {
+    return "no has " + property
+  }
+
+
 }
 Dog = {
   makeNoise: function(obj) {
@@ -210,6 +215,8 @@ eq(__lookup(dog, "friendly" ) , "unknown", "the _types, _types value")
 eq(__lookup(dog, "makeNoise")() , "Bark!", "the _type's function")
 eq(__lookup(snake, "snakey")() , "green", "the _type's function with object param")
 eq(__lookup(snake, "the_eyes") , "like a cat", "the_type's _lookup")
+eq(__lookup(snake, "sayAge")() , "You are 1 snake year years old", "_type's _type's func")
+eq(__lookup(snake, "say_what") , "no has say_what", "_type's _type's lookup")
 
 
 
