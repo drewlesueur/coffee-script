@@ -614,12 +614,9 @@ exports.Access = class Access extends Base
   compile: (o, lvl, baser, extra) ->
     name = @name.compile o
     if useLookup and !extra?.assignment
-      utility "lookup"
-      utility "slice"
-      utility "hasProp"
       #@proto + "__lookup(#{baser}, \"#{name}\")"
       name = if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
-      "__lookup(#{baser}#{@proto}, #{name})"
+      "#{utility 'lookup'}(#{baser}#{@proto}, #{name})"
     else
       @proto + if IDENTIFIER.test name then ".#{name}" else "[#{name}]"
 
@@ -637,7 +634,7 @@ exports.Index = class Index extends Base
     if useLookup and not(extra?.assignment)
       if @proto
         baser = baser + ".prototype"
-      "__lookup(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
+      "#{utility 'lookup'}(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
     else
       (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
 
@@ -976,6 +973,9 @@ exports.Assign = class Assign extends Base
     if name == "__useLookup__"
       if val == 'true'
         useLookup = true #__useLookup = !false # if you used __useLookup__ here
+        utility "lookup"
+        utility "slice"
+        utility "hasProp"
       else
         useLookup = false # you can toggle it in your code?!
     val = name + " #{ @context or '=' } " + val
@@ -1832,6 +1832,7 @@ UTILITIES =
 
   lookup: '''
     function (obj, property, dontBindObj, childObj, debug) {
+      var __slice = Array.prototype.slice
       if (property == "call" && "__original" in obj) {
         return function(){
           var args;
