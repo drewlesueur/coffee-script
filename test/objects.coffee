@@ -156,8 +156,6 @@ test "invoking functions with implicit object literals", ->
 
   result = getA a,
     b:1
-  console.log("the result should be undefined")
-  console.log("the result is #{result}")
   eq undefined, result
 
   result = getA b:1

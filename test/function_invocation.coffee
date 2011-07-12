@@ -1,4 +1,3 @@
-__useLookup__ = true
 # Function Invocation
 # -------------------
 

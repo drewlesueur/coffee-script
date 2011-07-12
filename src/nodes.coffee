@@ -1375,7 +1375,12 @@ exports.Op = class Op extends Base
     parts.push ' ' if op in ['new', 'typeof', 'delete'] or
                       op in ['+', '-'] and @first instanceof Op and @first.operator is op
     @first = new Parens @first if op is 'new' and @first.isStatement o
-    parts.push @first.compile o, LEVEL_OP
+    if useLookup and op in ['++', '--']
+      useLookup = false
+      parts.push @first.compile o, LEVEL_OP
+      useLookup = true
+    else
+      parts.push @first.compile o, LEVEL_OP
     parts.reverse() if @flip
     parts.join ''
 

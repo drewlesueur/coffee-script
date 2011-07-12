@@ -183,7 +183,8 @@ library = {
   joiner: function(str1, str2) {
     return str1 + str2
   },
-  info: "test"
+  info: "test",
+  val: 1
 }
 
 var a, b, generateGetter, getA, getArgs;
@@ -197,6 +198,10 @@ getA = generateGetter('a');
 result = getA(a, {
   b: 1
 });
+
+a = __lookup(library, "val")++
+
+
 eq(void 0, result, "should get null");
 
 eq(__lookup(library, "ooglie") , void 0, "not there")
