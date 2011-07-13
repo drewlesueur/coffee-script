@@ -218,6 +218,9 @@ runTests = (CoffeeScript) ->
       filename = path.join 'test', file
       fs.readFile filename, (err, code) ->
         currentFile = filename
+        code = """
+          #{code}
+        """
         try
           CoffeeScript.run code.toString(), {filename}
         catch e

@@ -1,7 +1,7 @@
 require("colors")
 
-__slice = Array.prototype.slice
 function __lookup(obj, property, dontBindObj, childObj, debug) {
+  __slice = Array.prototype.slice
   if (property == "call" && "__original" in obj) {
     return function(){
       var args;
@@ -49,7 +49,10 @@ function __lookup(obj, property, dontBindObj, childObj, debug) {
       return obj.length;
     } else if (isRegExp(obj) && property === "source") {
       return obj.source
-    } else if (obj[property] === void 0) {
+    } else if (typeof obj === "number") {
+      //return obj[property]
+      obj = new Number(obj)
+    } else if (obj[property] === void 0) { //might not need this one
       return
     } else {
       //thissedFunction.__original == ????
@@ -199,8 +202,6 @@ result = getA(a, {
   b: 1
 });
 
-a = __lookup(library, "val")++
-
 
 eq(void 0, result, "should get null");
 
@@ -277,11 +278,29 @@ eq(__lookup(testFunc, "apply")("dude", ["!", "@"]), "dude!@", "using call")
 //eq(__lookup(__lookup(snake, "testCall"), "call")({color:"blue"}, "!", "@"), "blue!@", "using call2")
 
 
+
+
+
+function argsTest() {
+  var length = __lookup(arguments, "length")
+  eq(length, 3, "length of args is 3")
+  var arr = [1,2, 3, 4]
+  eq(__lookup(arr, "length"), 4, "length should be 5")
+}
+argsTest(1,2,3);
+
+//This test shouldn't pass
+//a = __lookup(1, "toString")
+//eq(a, Number.prototype.toString, "lookup on a numebr")
+
 console.log((passCount + " tests passed").green)
 console.log((failCount + " tests failed").red)
 for (id in failes) {
   console.log(failes[id].red)
 }
+
+
+
 /*
 f = Array.prototype.reverse
 g = __lookup(f, "call")

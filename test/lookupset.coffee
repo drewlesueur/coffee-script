@@ -12,3 +12,8 @@ band =
 
 ok band.name is "Aterciopelados"
 ok band.Andrea is "Yea!"
+
+{name} = band
+
+
+__useLookup__ = false

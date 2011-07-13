@@ -974,7 +974,7 @@ exports.Assign = class Assign extends Base
       if val == 'true'
         useLookup = true #__useLookup = !false # if you used __useLookup__ here
         utility "lookup"
-        utility "slice"
+        utility "slice" #TODO move
         utility "hasProp"
       else
         useLookup = false # you can toggle it in your code?!
@@ -1375,7 +1375,7 @@ exports.Op = class Op extends Base
     parts.push ' ' if op in ['new', 'typeof', 'delete'] or
                       op in ['+', '-'] and @first instanceof Op and @first.operator is op
     @first = new Parens @first if op is 'new' and @first.isStatement o
-    if useLookup and op in ['++', '--']
+    if useLookup and op in ['++', '--', 'delete']
       useLookup = false
       parts.push @first.compile o, LEVEL_OP
       useLookup = true
@@ -1832,7 +1832,7 @@ UTILITIES =
 
   lookup: '''
     function (obj, property, dontBindObj, childObj, debug) {
-      var __slice = Array.prototype.slice
+      __slice = Array.prototype.slice
       if (property == "call" && "__original" in obj) {
         return function(){
           var args;
@@ -1880,7 +1880,9 @@ UTILITIES =
           return obj.length;
         } else if (isRegExp(obj) && property === "source") {
           return obj.source
-        } else if (obj[property] === void 0) {
+        } else if (typeof obj === "number") {
+          return obj[property]
+        } else if (obj[property] === void 0) { //might not need this one
           return
         } else {
           //thissedFunction.__original == ????
