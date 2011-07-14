@@ -15,8 +15,18 @@ ok band.Andrea is "Yea!"
 
 {name} = band
 
-a = new b.c.d(a)
+#testing old way
 
+__useLookup__ = false #todo make is so you don't have to do this
+class Animal
+  sound: "moo"
+  makeNoise: () => @sound
+__useLookup__ = false
 
+b = {}
+b.a = Animal
+a = new b.a()
+
+ok a.makeNoise() == "moo"
 __useLookup__ = false
 

@@ -542,8 +542,9 @@ exports.Call = class Call extends Base
       if useLookup
         if @isNew
           useLookup = false
-          'new ' + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
+          retValue = 'new ' + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
           useLookup = true
+          retValue
         else
           @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
       else
