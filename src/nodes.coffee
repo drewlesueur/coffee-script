@@ -539,7 +539,13 @@ exports.Call = class Call extends Base
     if @isSuper
       @superReference(o) + ".call(this#{ args and ', ' + args })"
     else
-      (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
+      if useLookup
+        useLookup = false
+        retValue = (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
+        useLookup = true
+        retValue
+      else
+        (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
 
   # `super()` is converted into a call against the superclass's implementation
   # of the current function.
@@ -1375,7 +1381,7 @@ exports.Op = class Op extends Base
     parts.push ' ' if op in ['new', 'typeof', 'delete'] or
                       op in ['+', '-'] and @first instanceof Op and @first.operator is op
     @first = new Parens @first if op is 'new' and @first.isStatement o
-    if useLookup and op in ['++', '--', 'delete']
+    if useLookup and op in ['++', '--', 'delete', 'new']
       useLookup = false
       parts.push @first.compile o, LEVEL_OP
       useLookup = true

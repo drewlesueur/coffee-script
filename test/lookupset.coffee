@@ -15,5 +15,8 @@ ok band.Andrea is "Yea!"
 
 {name} = band
 
+a = new b.c.d(a)
+
 
 __useLookup__ = false
+
