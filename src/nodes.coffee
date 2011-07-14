@@ -540,10 +540,12 @@ exports.Call = class Call extends Base
       @superReference(o) + ".call(this#{ args and ', ' + args })"
     else
       if useLookup
-        useLookup = false
-        retValue = (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
-        useLookup = true
-        retValue
+        if @isNew
+          useLookup = false
+          'new ' + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
+          useLookup = true
+        else
+          @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
       else
         (if @isNew then 'new ' else '') + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
 
