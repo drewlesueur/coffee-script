@@ -408,9 +408,16 @@ exports.Value = class Value extends Base
     props = @properties
     code  = @base.compile o, if props.length then LEVEL_ACCESS else null
     code  = "#{code}." if (@base instanceof Parens or props.length) and SIMPLENUM.test code
+    #TODO set
     if useLookup and !extra?.assignment
       code = prop.compile o, null, code, extra  for prop in props
-    else if useLookup and extra?.assignment
+    else if useLookup and extra?.assignment and props.length > 0
+      useLookup = false
+      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o).substring(1)
+      useLookup = true
+      props = props.slice(0, props.length - 1)
+      code = prop.compile o, null,  code, extra for prop in props
+    else if useLookup and extra?.assignment and props.length is 0
       code += prop.compile o, null,  code, extra for prop in props
     else
       code += prop.compile o for prop in props
@@ -627,7 +634,8 @@ exports.Access = class Access extends Base
   #why not compileNode?
   compile: (o, lvl, baser, extra) ->
     name = @name.compile o
-    if useLookup and !extra?.assignment
+    #TODO set
+    if useLookup
       #@proto + "__lookup(#{baser}, \"#{name}\")"
       name = if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
       "#{utility 'lookup'}(#{baser}#{@proto}, #{name})"
@@ -992,7 +1000,11 @@ exports.Assign = class Assign extends Base
         utility "hasProp"
       else
         useLookup = false # you can toggle it in your code?!
-    val = name + " #{ @context or '=' } " + val
+    #TODO set here
+    if useLookup and @variable.properties.length > 0
+      val = "#{utility 'set'}(#{name}, \"#{@variable.propsLastOne}\", #{val})"
+    else 
+      val = name + " #{ @context or '=' } " + val
 
     if o.level <= LEVEL_LIST then val else "(#{val})"
 
@@ -1842,6 +1854,17 @@ UTILITIES =
       return -1;
     }
   '''
+  
+  set: '''
+    function (obj, prop, val) {
+      var set = __lookup(obj, "_set");
+      if (set && typeof obj == "object") {
+        set(obj, prop, val);
+      } else {
+        obj[prop] = val;  
+      }
+    }
+  '''
 
   lookup: '''
     function (obj, property, dontBindObj, childObj, debug) {
@@ -1920,13 +1943,14 @@ UTILITIES =
       var type = obj._type
       var hasTypeObj = (typeof type === "object") || (typeof type === "function");
       if (hasTypeObj) {
-        ret = __lookup(type, property, true, obj);
+        var usedObj = childObj || obj;
+        ret = __lookup(type, property, true, usedObj);
         if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
           var fn = function () {
             var args;
             args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-            args.unshift(obj)
-            return ret.apply(obj, args)
+            args.unshift(usedObj)
+            return ret.apply(usedObj, args)
           }
           fn.__original = ret
           return fn
