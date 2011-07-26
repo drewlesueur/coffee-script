@@ -14,24 +14,20 @@ band =
 
 ok band.name is "Aterciopelados"
 ok band.Andrea is "Yea!"
+{name} = band
+ok name is "Aterciopelados"
 
-
-Yet2 =
-  name: "Yet2"
-Yet =
-  name: "Yet"
-  _type: Yet2
 
 Another = 
   name: "Another"
   _lookup: (obj, prop) ->
     "#{obj._type.name}:#{prop}"
-  _type: Yet
 
 Animal =
   makeNoise: (self) ->
     self.noise + " normal animal"
   name: "Animal"
+  size: "big"
   _type: Another
 
 Dog =
@@ -40,20 +36,18 @@ Dog =
   noise: "bark"
   _type: Animal
   name: "Dog"
-  _lookup__: (obj, prop) ->
-    "#{obj._type.name}:#{prop}"
 
 
 dog =
   extra: "test for drew"
   _type: Dog
  
+ok dog.size is "big"
+ok dog.makeNoise("woof") is "barkwoof"
+ok dog.yoyo is "Dog:yoyo"
 
 Wrapper =
   _set: (obj, prop, val) ->
-    console.log "the obj is #{JSON.stringify obj}"
-    console.log "the prop is #{prop}"
-    console.log "thge val is #{val}"
     obj.attributes[prop] = val
     obj.attributes[prop] = val
     
@@ -65,17 +59,9 @@ person =
 
 
 person.age = 11
-console.log person.attributes.age
 ok person.attributes.age is 11
 
-console.log dog.yy
-ok dog.makeNoise("woof") is "barkwoof"
-ok dog.yoyo is "Dog:yoyo"
 
-
-
-
-{name} = band
 
 #a = {}
 #a.b = {}
@@ -85,18 +71,7 @@ ok dog.yoyo is "Dog:yoyo"
 #
 #a["b" + a.b("way")]["socks"]
 
-#testing old way
 
-__useLookup__ = false #todo make is so you don't have to do this
-class Animal
-  sound: "moo"
-  makeNoise: () => @sound
 __useLookup__ = false
 
-b = {}
-b.a = Animal
-a = new b.a()
-
-ok a.makeNoise() == "moo"
-__useLookup__ = false
-
+#Not compatible with existing class syntax
