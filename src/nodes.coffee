@@ -1404,6 +1404,7 @@ exports.Op = class Op extends Base
                       op in ['+', '-'] and @first instanceof Op and @first.operator is op
     @first = new Parens @first if op is 'new' and @first.isStatement o
     if useLookup and op in ['++', '--', 'delete', 'new']
+      #TODO: make the delete meta
       useLookup = false
       parts.push @first.compile o, LEVEL_OP
       useLookup = true

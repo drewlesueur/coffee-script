@@ -63,6 +63,7 @@ person =
   eyes: "brown"
   attributes: {}
 
+
 person.age = 11
 console.log person.attributes.age
 ok person.attributes.age is 11
