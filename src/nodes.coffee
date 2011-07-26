@@ -413,8 +413,6 @@ exports.Value = class Value extends Base
       code = prop.compile o, null, code, extra  for prop in props
     else if useLookup and extra?.assignment and props.length > 0
       @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o, null, null, plainName: true, disableUseLookup: true)
-      console.log props.slice(props.length - 1, props.length)[0].constructor.toString()
-      console.log "props last one is #{@propsLastOne}"
       props = props.slice(0, props.length - 1)
       code = prop.compile o, null,  code, extra for prop in props
     else if useLookup and extra?.assignment and props.length is 0
@@ -1860,10 +1858,11 @@ UTILITIES =
   '''
   
   set: '''
-    function (obj, prop, val) {
+    function (obj, prop, val, meta) {
+      meta = meta || true
       var set = __lookup(obj, "_set");
-      if (set && typeof obj == "object") {
-        set(obj, prop, val);
+      if (meta && set && typeof obj == "object") {
+        set(prop, val);
       } else {
         obj[prop] = val;  
       }

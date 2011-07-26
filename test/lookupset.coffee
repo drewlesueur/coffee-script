@@ -1,5 +1,7 @@
 __useLookup__ = true
 
+ok ?= () ->
+
 band =
   name: "Aterciopelados"
   albums: ["Rio", "Oye", "Gozo Poderoso"]
@@ -49,14 +51,20 @@ dog =
 
 Wrapper =
   _set: (obj, prop, val) ->
-    obj.attributes ||= {}
+    console.log "the obj is #{JSON.stringify obj}"
+    console.log "the prop is #{prop}"
+    console.log "thge val is #{val}"
     obj.attributes[prop] = val
+    obj.attributes[prop] = val
+    
 
 person =
   _type: Wrapper
   eyes: "brown"
+  attributes: {}
 
 person.age = 11
+console.log person.attributes.age
 ok person.attributes.age is 11
 
 console.log dog.yy
@@ -68,13 +76,13 @@ ok dog.yoyo is "Dog:yoyo"
 
 {name} = band
 
-a = {}
-a.b = {}
-a.b.casper = 2
-a.b[1 + 100] = 30
-a.b[ a.b("c") ] = 400
-
-a["b" + a.b("way")]["socks"]
+#a = {}
+#a.b = {}
+#a.b.casper = 2
+#a.b[1 + 100] = 30
+#a.b[ a.b("c") ] = 400
+#
+#a["b" + a.b("way")]["socks"]
 
 #testing old way
 
