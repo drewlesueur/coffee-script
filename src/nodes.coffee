@@ -413,7 +413,12 @@ exports.Value = class Value extends Base
       code = prop.compile o, null, code, extra  for prop in props
     else if useLookup and extra?.assignment and props.length > 0
       useLookup = false
-      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o).substring(1)
+      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o)
+      if @propsLastOne.substr(0,1) == "."
+        @propsLastOne = @propsLastOne.substr(1)
+      else if @propsLastOne.substr(0,1) == "["
+        @propsLastOne = @propsLastOne.substr(2, @propsLastOne.length - 2)
+
       useLookup = true
       props = props.slice(0, props.length - 1)
       code = prop.compile o, null,  code, extra for prop in props
@@ -1001,7 +1006,7 @@ exports.Assign = class Assign extends Base
       else
         useLookup = false # you can toggle it in your code?!
     #TODO set here
-    if useLookup and @variable.properties.length > 0
+    if useLookup and @variable.properties?.length > 0
       val = "#{utility 'set'}(#{name}, \"#{@variable.propsLastOne}\", #{val})"
     else 
       val = name + " #{ @context or '=' } " + val

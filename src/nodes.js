@@ -1217,7 +1217,7 @@
       return unfoldSoak(o, this, 'variable');
     };
     Assign.prototype.compileNode = function(o) {
-      var isValue, match, name, val, _ref2, _ref3, _ref4, _ref5, _ref6;
+      var isValue, match, name, val, _ref2, _ref3, _ref4, _ref5;
       if (isValue = this.variable instanceof Value) {
         if (this.variable.isArray() || this.variable.isObject()) {
           return this.compilePatternMatch(o);
@@ -1262,7 +1262,7 @@
           useLookup = false;
         }
       }
-      if (useLookup && ((_ref6 = this.variable.properties) != null ? _ref6.length : void 0) > 0) {
+      if (useLookup && this.variable.properties.length > 0) {
         val = "" + (utility('set')) + "(" + name + ", \"" + this.variable.propsLastOne + "\", " + val + ")";
       } else {
         val = name + (" " + (this.context || '=') + " ") + val;

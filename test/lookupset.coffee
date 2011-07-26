@@ -61,6 +61,9 @@ console.log dog.yy
 a = {}
 a.b = {}
 a.b.casper = 2
+a.b[1 + 100] = 30
+
+a["b" + ""]["socks"]
 
 #testing old way
 
