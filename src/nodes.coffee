@@ -412,14 +412,9 @@ exports.Value = class Value extends Base
     if useLookup and !extra?.assignment
       code = prop.compile o, null, code, extra  for prop in props
     else if useLookup and extra?.assignment and props.length > 0
-      useLookup = false
-      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o)
-      if @propsLastOne.substr(0,1) == "."
-        @propsLastOne = @propsLastOne.substr(1)
-      else if @propsLastOne.substr(0,1) == "["
-        @propsLastOne = @propsLastOne.substring(2, @propsLastOne.length - 2)
-
-      useLookup = true
+      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o, null, null, plainName: true, disableUseLookup: true)
+      console.log props.slice(props.length - 1, props.length)[0].constructor.toString()
+      console.log "props last one is #{@propsLastOne}"
       props = props.slice(0, props.length - 1)
       code = prop.compile o, null,  code, extra for prop in props
     else if useLookup and extra?.assignment and props.length is 0
@@ -640,10 +635,12 @@ exports.Access = class Access extends Base
   compile: (o, lvl, baser, extra) ->
     name = @name.compile o
     #TODO set
-    if useLookup
+    if useLookup and !extra?.disableUseLookup
       #@proto + "__lookup(#{baser}, \"#{name}\")"
       name = if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
       "#{utility 'lookup'}(#{baser}#{@proto}, #{name})"
+    else if extra?.plainName
+      @proto + if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
     else
       @proto + if IDENTIFIER.test name then ".#{name}" else "[#{name}]"
 
@@ -658,10 +655,12 @@ exports.Index = class Index extends Base
   children: ['index']
 
   compile: (o, lvl, baser, extra) ->
-    if useLookup and not(extra?.assignment)
+    if useLookup and !extra?.disableUseLookup
       if @proto
         baser = baser + ".prototype"
       "#{utility 'lookup'}(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
+    else if extra?.plainName
+      @index.compile o, LEVEL_PAREN 
     else
       (if @proto then '.prototype' else '') + "[#{ @index.compile o, LEVEL_PAREN }]"
 
@@ -1007,7 +1006,7 @@ exports.Assign = class Assign extends Base
         useLookup = false # you can toggle it in your code?!
     #TODO set here
     if useLookup and @variable.properties?.length > 0
-      val = "#{utility 'set'}(#{name}, \"#{@variable.propsLastOne}\", #{val})"
+      val = "#{utility 'set'}(#{name}, #{@variable.propsLastOne}, #{val})"
     else 
       val = name + " #{ @context or '=' } " + val
 

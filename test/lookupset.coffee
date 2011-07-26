@@ -23,7 +23,6 @@ Yet =
 Another = 
   name: "Another"
   _lookup: (obj, prop) ->
-    console.log obj
     "#{obj._type.name}:#{prop}"
   _type: Yet
 
@@ -40,18 +39,29 @@ Dog =
   _type: Animal
   name: "Dog"
   _lookup__: (obj, prop) ->
-    console.log obj
     "#{obj._type.name}:#{prop}"
-
 
 
 dog =
   extra: "test for drew"
   _type: Dog
+ 
+
+Wrapper =
+  _set: (obj, prop, val) ->
+    obj.attributes ||= {}
+    obj.attributes[prop] = val
+
+person =
+  _type: Wrapper
+  eyes: "brown"
+
+person.age = 11
+ok person.attributes.age is 11
 
 console.log dog.yy
-#ok dog.makeNoise("woof") is "barkwoof"
-#ok dog.yoyo is "Dog:yoyo"
+ok dog.makeNoise("woof") is "barkwoof"
+ok dog.yoyo is "Dog:yoyo"
 
 
 
@@ -62,8 +72,9 @@ a = {}
 a.b = {}
 a.b.casper = 2
 a.b[1 + 100] = 30
+a.b[ a.b("c") ] = 400
 
-a["b" + ""]["socks"]
+a["b" + a.b("way")]["socks"]
 
 #testing old way
 
