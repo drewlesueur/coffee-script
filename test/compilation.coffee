@@ -1,3 +1,4 @@
+__useLookup__ = false
 # Compilation
 # -----------
 

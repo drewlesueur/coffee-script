@@ -417,7 +417,7 @@ exports.Value = class Value extends Base
       if @propsLastOne.substr(0,1) == "."
         @propsLastOne = @propsLastOne.substr(1)
       else if @propsLastOne.substr(0,1) == "["
-        @propsLastOne = @propsLastOne.substr(2, @propsLastOne.length - 2)
+        @propsLastOne = @propsLastOne.substring(2, @propsLastOne.length - 2)
 
       useLookup = true
       props = props.slice(0, props.length - 1)
