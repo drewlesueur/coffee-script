@@ -4,7 +4,7 @@
 # the syntax tree into a string of JavaScript code, call `compile()` on the root.
 
 {Scope} = require './scope'
-useLookup = false
+useGetSet = false
 # Import the helpers we plan to use.
 {compact, flatten, extend, merge, del, starts, ends, last} = require './helpers'
 
@@ -409,13 +409,13 @@ exports.Value = class Value extends Base
     code  = @base.compile o, if props.length then LEVEL_ACCESS else null
     code  = "#{code}." if (@base instanceof Parens or props.length) and SIMPLENUM.test code
     #TODO set
-    if useLookup and !extra?.assignment
+    if useGetSet and !extra?.assignment
       code = prop.compile o, null, code, extra  for prop in props
-    else if useLookup and extra?.assignment and props.length > 0
-      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o, null, null, plainName: true, disableUseLookup: true)
+    else if useGetSet and extra?.assignment and props.length > 0
+      @propsLastOne = props.slice(props.length - 1, props.length)[0].compile(o, null, null, plainName: true, disableuseGetSet: true)
       props = props.slice(0, props.length - 1)
       code = prop.compile o, null,  code, extra for prop in props
-    else if useLookup and extra?.assignment and props.length is 0
+    else if useGetSet and extra?.assignment and props.length is 0
       code += prop.compile o, null,  code, extra for prop in props
     else
       code += prop.compile o for prop in props
@@ -549,11 +549,11 @@ exports.Call = class Call extends Base
     if @isSuper
       @superReference(o) + ".call(this#{ args and ', ' + args })"
     else
-      if useLookup
+      if useGetSet
         if @isNew
-          useLookup = false
+          useGetSet = false
           retValue = 'new ' + @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
-          useLookup = true
+          useGetSet = true
           retValue
         else
           @variable.compile(o, LEVEL_ACCESS) + "(#{args})"
@@ -569,7 +569,7 @@ exports.Call = class Call extends Base
   # `.apply()` call to allow an array of arguments to be passed.
   # If it's a constructor, then things get real tricky. We have to inject an
   # inner constructor in order to be able to pass the varargs.
-  # TODO: fix this for useLookup
+  # TODO: fix this for useGetSet
   compileSplat: (o, splatArgs) ->
     return "#{ @superReference o }.apply(this, #{splatArgs})" if @isSuper
     if @isNew
@@ -584,7 +584,7 @@ exports.Call = class Call extends Base
     base = new Value @variable
     if (name = base.properties.pop()) and base.isComplex()
       ref = o.scope.freeVariable 'ref'
-      if useLookup
+      if useGetSet
         innerCode = "(#{ref} = #{ base.compile o, LEVEL_LIST })"
         fun = "#{ name.compile o, null, innerCode }"
       else
@@ -594,7 +594,7 @@ exports.Call = class Call extends Base
       fun = "(#{fun})" if SIMPLENUM.test fun
       if name
         ref = fun
-        if useLookup
+        if useGetSet
           fun = name.compile o, null, fun
         else
           fun += name.compile o
@@ -633,10 +633,10 @@ exports.Access = class Access extends Base
   compile: (o, lvl, baser, extra) ->
     name = @name.compile o
     #TODO set
-    if useLookup and !extra?.disableUseLookup
-      #@proto + "__lookup(#{baser}, \"#{name}\")"
+    if useGetSet and !extra?.disableuseGetSet
+      #@proto + "__get(#{baser}, \"#{name}\")"
       name = if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
-      "#{utility 'lookup'}(#{baser}#{@proto}, #{name})"
+      "#{utility 'get'}(#{baser}#{@proto}, #{name})"
     else if extra?.plainName
       @proto + if IDENTIFIER.test name then "\"#{name}\"" else "#{name}"
     else
@@ -653,10 +653,10 @@ exports.Index = class Index extends Base
   children: ['index']
 
   compile: (o, lvl, baser, extra) ->
-    if useLookup and !extra?.disableUseLookup
+    if useGetSet and !extra?.disableuseGetSet
       if @proto
         baser = baser + ".prototype"
-      "#{utility 'lookup'}(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
+      "#{utility 'get'}(#{baser}, #{ @index.compile o, LEVEL_PAREN })"
     else if extra?.plainName
       @index.compile o, LEVEL_PAREN 
     else
@@ -772,7 +772,7 @@ exports.Slice = class Slice extends Base
         (+compiled + 1).toString()
       else
         "(#{compiled} + 1) || 9e9"
-    if useLookup
+    if useGetSet
       "#{baser}.slice(#{ fromStr }#{ toStr or '' })"
     else
       ".slice(#{ fromStr }#{ toStr or '' })"
@@ -994,16 +994,16 @@ exports.Assign = class Assign extends Base
       @value.name  = match[2] ? match[3] ? match[4] ? match[5]
     val = @value.compile o, LEVEL_LIST
     return "#{name}: #{val}" if @context is 'object'
-    if name == "__useLookup__"
+    if name == "__useGetSet__"
       if val == 'true'
-        useLookup = true #__useLookup = !false # if you used __useLookup__ here
-        utility "lookup"
+        useGetSet = true #__useGetSet = !false # if you used __useGetSet__ here
+        utility "get"
         utility "slice" #TODO move
         utility "hasProp"
       else
-        useLookup = false # you can toggle it in your code?!
+        useGetSet = false # you can toggle it in your code?!
     #TODO set here
-    if useLookup and @variable.properties?.length > 0
+    if useGetSet and @variable.properties?.length > 0
       val = "#{utility 'set'}(#{name}, #{@variable.propsLastOne}, #{val})"
     else 
       val = name + " #{ @context or '=' } " + val
@@ -1403,11 +1403,11 @@ exports.Op = class Op extends Base
     parts.push ' ' if op in ['new', 'typeof', 'delete'] or
                       op in ['+', '-'] and @first instanceof Op and @first.operator is op
     @first = new Parens @first if op is 'new' and @first.isStatement o
-    if useLookup and op in ['++', '--', 'delete', 'new']
+    if useGetSet and op in ['++', '--', 'delete', 'new']
       #TODO: make the delete meta
-      useLookup = false
+      useGetSet = false
       parts.push @first.compile o, LEVEL_OP
-      useLookup = true
+      useGetSet = true
     else
       parts.push @first.compile o, LEVEL_OP
     parts.reverse() if @flip
@@ -1861,7 +1861,7 @@ UTILITIES =
   set: '''
     function (obj, prop, val, meta) {
       meta = meta || true
-      var set = __lookup(obj, "_set");
+      var set = __get(obj, "_set");
       if (meta && set && typeof obj == "object") {
         set(prop, val);
       } else {
@@ -1870,7 +1870,7 @@ UTILITIES =
     }
   '''
 
-  lookup: '''
+  get: '''
     function (obj, property, dontBindObj, childObj, debug) {
       __slice = Array.prototype.slice
       if (property == "call" && "__original" in obj) {
@@ -1937,9 +1937,9 @@ UTILITIES =
           ret = thissedFunction
         }
         return ret
-      } else if ("_lookup" in obj) {
+      } else if ("_get" in obj) {
         var usedObj = childObj || obj
-        var ret = (obj._lookup(usedObj, property))
+        var ret = (obj._get(usedObj, property))
         if (!isUndefined(ret)) {
           return ret  
         }
@@ -1948,7 +1948,7 @@ UTILITIES =
       var hasTypeObj = (typeof type === "object") || (typeof type === "function");
       if (hasTypeObj) {
         var usedObj = childObj || obj;
-        ret = __lookup(type, property, true, usedObj);
+        ret = __get(type, property, true, usedObj);
         if (!dontBindObj && isFunction(ret)) { //is don't bind obj needed here
           var fn = function () {
             var args;

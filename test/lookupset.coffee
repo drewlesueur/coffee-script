@@ -1,4 +1,4 @@
-__useLookup__ = true
+__useGetSet__ = true
 
 ok ?= () ->
 
@@ -6,7 +6,7 @@ band =
   name: "Aterciopelados"
   albums: ["Rio", "Oye", "Gozo Poderoso"]
   members: ["Andrea", "Hector"]
-  _lookup: (obj, name) ->
+  _get: (obj, name) ->
     if name in obj.members
       "Yea!"
     else
@@ -20,7 +20,7 @@ ok name is "Aterciopelados"
 
 Another = 
   name: "Another"
-  _lookup: (obj, prop) ->
+  _get: (obj, prop) ->
     "#{obj._type.name}:#{prop}"
 
 Animal =
@@ -72,6 +72,6 @@ ok person.attributes.age is 11
 #a["b" + a.b("way")]["socks"]
 
 
-__useLookup__ = false
+__useGetSet__ = false
 
 #Not compatible with existing class syntax
