@@ -1860,7 +1860,8 @@ UTILITIES =
   
   set: '''
     function (obj, prop, val, meta) {
-      meta = meta || true
+      if (meta === void 0) // if meta is undefined
+        meta = true
       var set = __get(obj, "_set");
       if (meta && set && typeof obj == "object") {
         set(prop, val);
